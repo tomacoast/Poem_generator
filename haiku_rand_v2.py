@@ -1,12 +1,7 @@
 import random
 import requests
 from xml.dom import minidom
-
-print getSyllables("eating")
-words = [("Weston", 2), ("is", 1), ("and", 1), ("yellow-bellied", 4), ("tomato", 3), ("limeade", 2), ("Skittles", 2), ("who", 1), ("greet", 1),
- ("meet", 1), ("meat", 1), ("the", 1), ("dancer", 2), ("dances", 2), ("spaghetti", 3), ("hallow", 2), ("thy", 1), ("name", 1), ("repeat", 2),
- ("school", 1), ("lover", 2), ("love", 1), ("serendipity", 5), ("lady", 2), ("animal", 3), ("discover", 3), ("whom", 1), ("if", 1), ("go", 1),
- ("beyond", 2)]
+import json
 
 theFile = "wordsEn.txt"
 
@@ -19,10 +14,10 @@ def grabEnglish(filename):
     return english
 
 def getSyllables(word):
-	url = 'http://www.dictionaryapi.com/api/v1/references/collegiate/xml/' + word + '?key=b3c27f01-73f0-4338-9458-b81e95877df9'
+	url = 'http://rhymebrain.com/talk?function=getWordInfo&word=' + word
 	r = requests.get(url)
-	m = minidom.parseString(r.text.encode('ascii', 'ignore'))
-	return len(m.getElementsByTagName('entry')[0].getElementsByTagName('hw')[0].toxml().split('*'))
+	j = json.loads(r.text)
+	return int(j['syllables'])
 
 def createPoetry(argument):
     haiku = []
@@ -31,24 +26,25 @@ def createPoetry(argument):
         line = []
         while (totsyl < 5):
             rand = random.randint(0,len(argument)) -1
-            if (argument[rand][1]+totsyl <= 5):
+            if (getSyllables(argument[rand])+totsyl <= 5):
                 line.append(argument[rand])
-                totsyl = totsyl + argument[rand][1]
+                totsyl = totsyl + getSyllables(argument[rand])
         haiku.append(line)
     line = []
     totsyl = 0
     while (totsyl < 7):
             rand = random.randint(0,len(argument)) -1
-            if (argument[rand][1]+totsyl <= 7):
+            if (getSyllables(argument[rand])+totsyl <= 7):
                 line.append(argument[rand])
-                totsyl = totsyl + argument[rand][1]
+                totsyl = totsyl + getSyllables(argument[rand])
     haiku.insert(1,line)
     for j in haiku:
         lin = ""
         for k in j:
-            lin = lin + " " + k[0]
+            lin = lin + " " + k#[0]
         print lin
     return haiku
 
-createPoetry(words)
+#print getSyllables("antipersperant")
+createPoetry(grabEnglish(theFile))
 #print grabEnglish(theFile)
