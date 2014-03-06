@@ -1,4 +1,8 @@
 import random
+import requests
+from xml.dom import minidom
+
+print getSyllables("eating")
 words = [("Weston", 2), ("is", 1), ("and", 1), ("yellow-bellied", 4), ("tomato", 3), ("limeade", 2), ("Skittles", 2), ("who", 1), ("greet", 1),
  ("meet", 1), ("meat", 1), ("the", 1), ("dancer", 2), ("dances", 2), ("spaghetti", 3), ("hallow", 2), ("thy", 1), ("name", 1), ("repeat", 2),
  ("school", 1), ("lover", 2), ("love", 1), ("serendipity", 5), ("lady", 2), ("animal", 3), ("discover", 3), ("whom", 1), ("if", 1), ("go", 1),
@@ -13,6 +17,12 @@ def grabEnglish(filename):
         english.append(line.strip())
     f.close()
     return english
+
+def getSyllables(word):
+	url = 'http://www.dictionaryapi.com/api/v1/references/collegiate/xml/' + word + '?key=b3c27f01-73f0-4338-9458-b81e95877df9'
+	r = requests.get(url)
+	m = minidom.parseString(r.text.encode('ascii', 'ignore'))
+	return len(m.getElementsByTagName('entry')[0].getElementsByTagName('hw')[0].toxml().split('*'))
 
 def createPoetry(argument):
     haiku = []
