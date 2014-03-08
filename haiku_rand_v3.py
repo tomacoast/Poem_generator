@@ -5,6 +5,7 @@ import json
 import tweepy
 import webbrowser
 import time
+import sqlite3
 
 theFile = "wordsEn.txt"
 
@@ -30,12 +31,35 @@ def grabEnglish(filename):
         english.append(line.strip())
     f.close()
     return english
+    
+def rememberSyllables(word, syllables):
+    conn = sqlite3.connect("wordbase.db")
+    c = conn.cursor()
+    testWord = (word,)
+    c.execute('SELECT * FROM words WHERE Word =?', [word])
+    if (c.fetchone() == None):
+        c.execute('INSERT INTO words values(%r, %s)'%(word, syllables))
+        conn.commit()
+        print c.fetchone()
 
 def getSyllables(word):
-	url = 'http://rhymebrain.com/talk?function=getWordInfo&word=' + word
-	r = requests.get(url)
-	j = json.loads(r.text)
-	return int(j['syllables'])
+    conn = sqlite3.connect("wordbase.db")
+    c = conn.cursor()
+    c.execute('SELECT * FROM words WHERE Word =?', [word])
+    syllables = 0
+    temp = c.fetchone()
+    if (temp == None):
+        url = 'http://rhymebrain.com/talk?function=getWordInfo&word=' + word
+        try:
+            r = requests.get(url)
+            j = json.loads(r.text)
+            rememberSyllables(word, int(j['syllables']))
+            syllables = int(j['syllables'])
+        except requests.exceptions.RequestException, e:
+            syllables = 0
+    else:
+        syllables = temp[1]
+    return syllables
 
 def haikuToString(haiku):
 	x = ""
@@ -53,7 +77,7 @@ def createPoetry(argument):
         line = []
         while (totsyl < 5):
             rand = random.randint(0,len(argument)) -1
-            if (getSyllables(argument[rand])+totsyl <= 5):
+            if (getSyllables(argument[rand])+totsyl <= 5 and getSyllables(argument[rand]) > 0):
                 line.append(argument[rand])
                 totsyl = totsyl + getSyllables(argument[rand])
         haiku.append(line)
@@ -61,7 +85,7 @@ def createPoetry(argument):
     totsyl = 0
     while (totsyl < 7):
             rand = random.randint(0,len(argument)) -1
-            if (getSyllables(argument[rand])+totsyl <= 7):
+            if (getSyllables(argument[rand])+totsyl <= 7 and getSyllables(argument[rand]) > 0):
                 line.append(argument[rand])
                 totsyl = totsyl + getSyllables(argument[rand])
     haiku.insert(1,line)
