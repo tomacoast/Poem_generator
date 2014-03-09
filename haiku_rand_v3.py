@@ -94,4 +94,4 @@ def createPoetry(argument):
 api = setupTwitter()
 while(True):
 	tweet(haikuToString(createPoetry(grabEnglish(theFile))), api)
-	time.sleep(60*60) #time in seconds
+	time.sleep(60*60*12) #time in seconds, 12hr posts
