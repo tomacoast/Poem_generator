@@ -6,6 +6,7 @@ import tweepy
 import webbrowser
 import time
 import sqlite3
+import re
 
 theFile = "wordsEn.txt"
 
@@ -32,15 +33,26 @@ def grabEnglish(filename):
     f.close()
     return english
     
-def rememberSyllables(word, syllables):
+def remember(word, syllables, wordType):
     conn = sqlite3.connect("wordbase.db")
     c = conn.cursor()
     testWord = (word,)
     c.execute('SELECT * FROM words WHERE Word =?', [word])
     if (c.fetchone() == None):
-        c.execute('INSERT INTO words values(%r, %s)'%(word, syllables))
+        c.execute('INSERT INTO words VALUES(%r, %s, %r)'%(word, syllables, str(wordType)))
         conn.commit()
-        print c.fetchone()
+    print c.fetchone()
+
+def getType(word):
+    try:
+        url = 'http://www.dictionaryapi.com/api/v1/references/collegiate/xml/' + word + '?key=462334a9-867b-4ce1-b34e-ab97c3e3afc0'
+        r = requests.get(url)
+        m = minidom.parseString(r.text.encode('ascii', 'ignore'))
+        wordType = m.getElementsByTagName('entry')[0].getElementsByTagName('fl')[0].toxml()
+        wordType = re.sub('<[A-Za-z\/][^>]*>', '', wordType)
+    except Exception, e:
+        wordType = 0
+    return wordType
 
 def getSyllables(word):
     conn = sqlite3.connect("wordbase.db")
@@ -53,8 +65,12 @@ def getSyllables(word):
         try:
             r = requests.get(url)
             j = json.loads(r.text)
-            rememberSyllables(word, int(j['syllables']))
-            syllables = int(j['syllables'])
+            wordType = getType(word)
+            if (wordType != 0):
+                remember(word, int(j['syllables']), wordType)
+                syllables = int(j['syllables'])
+            else:
+                syllables = 0
         except requests.exceptions.RequestException, e:
             syllables = 0
     else:
@@ -93,5 +109,8 @@ def createPoetry(argument):
 
 api = setupTwitter()
 while(True):
-	tweet(haikuToString(createPoetry(grabEnglish(theFile))), api)
-	time.sleep(60*60*12) #time in seconds, 12hr posts
+    print 'NEW POST-'
+    haiku = haikuToString(createPoetry(grabEnglish(theFile)))
+    print haiku
+    tweet(haiku, api)
+    time.sleep(60*60*12) #time in seconds, 12hr posts
