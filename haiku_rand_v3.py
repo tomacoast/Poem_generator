@@ -112,5 +112,5 @@ while(True):
     print 'NEW POST-'
     haiku = haikuToString(createPoetry(grabEnglish(theFile)))
     print haiku
-    tweet(haiku, api)
+    tweet(haiku + '\n#Poetry', api)
     time.sleep(60*60*12) #time in seconds, 12hr posts
